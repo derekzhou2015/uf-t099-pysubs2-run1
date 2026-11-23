@@ -5,6 +5,14 @@ Release Notes
 
 - SRT/VTT parser can handle HTML entities via new ``decode_html_entities`` reader parameter,
   which defaults to ``True`` for VTT and ``False`` for SRT (Issue #123)
+- SRT/VTT writer now emits bold styling (``<b>``); bold was previously dropped on output even
+  though the reader understood it, so it did not survive a round-trip
+- TMP reader now recognizes bold/italic/strikeout tags (``<b>``, ``<i>``, ``<s>``) and the TMP
+  writer emits bold, so all four inline styles survive a TMP round-trip
+- TTML reader no longer introduces duplicate spaces between inline-styled spans on round-trip
+  (whitespace inserted by XML indentation is now normalized)
+- Added a multi-format round-trip regression test suite (``tests/formats/test_roundtrip.py``)
+  with documented acceptance criteria and a justified whitelist (see ``docs/roundtrip-criteria.rst``)
 
 **1.9.1** --- released on 2026-10-30
 

@@ -177,6 +177,34 @@ def test_read_tags() -> None:
     assert subs.equals(ref)
 
 
+def test_bold_survives_roundtrip() -> None:
+    # Regression: the SRT writer handled italic/underline/strikeout but dropped
+    # bold, even though the reader understands <b>. Bold must now round-trip.
+    ref = SSAFile()
+    ref.append(SSAEvent(start=0, end=make_time(s=1), text=r"{\b1}bold{\b0} plain"))
+    ref.append(SSAEvent(start=make_time(s=1), end=make_time(s=2),
+                        text=r"nested {\i1}a {\b1}b{\b0} c{\i0} end"))
+
+    text = ref.to_string("srt")
+    assert "<b>bold</b>" in text
+
+    subs = SSAFile.from_string(text)
+    assert subs[0].text == r"{\b1}bold{\b0} plain"
+    assert subs[0].plaintext == "bold plain"
+    assert subs[1].plaintext == "nested a b c end"
+
+
+def test_bold_style_emitted_in_srt() -> None:
+    # A bold line style must be inlined as <b> in SRT output.
+    subs = SSAFile()
+    subs.styles["Default"].bold = True
+    subs.append(SSAEvent(start=0, end=make_time(s=1), text="whole line bold"))
+
+    text = subs.to_string("srt")
+    assert "<b>whole line bold</b>" in text
+
+
+
 def test_empty_subtitles() -> None:
     # regression test for issue #11
 

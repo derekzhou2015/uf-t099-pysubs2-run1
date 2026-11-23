@@ -69,7 +69,14 @@ class TmpFormat(FormatBase):
 
         def prepare_text(text: str) -> str:
             text = text.replace("|", r"\N")  # convert newlines
+            text = re.sub(r"< *b *>", r"{\\b1}", text)
+            text = re.sub(r"< */ *b *>", r"{\\b0}", text)
+            text = re.sub(r"< *i *>", r"{\\i1}", text)
+            text = re.sub(r"< */ *i *>", r"{\\i0}", text)
             text = re.sub(r"< *u *>", r"{\\u1}", text)
+            text = re.sub(r"< */ *u *>", r"{\\u0}", text)
+            text = re.sub(r"< *s *>", r"{\\s1}", text)
+            text = re.sub(r"< */ *s *>", r"{\\s0}", text)
             text = re.sub(r"< */? *[a-zA-Z][^>]*>", "", text) # strip other HTML tags
             return text
 
@@ -107,7 +114,7 @@ class TmpFormat(FormatBase):
         """
         See :meth:`pysubs2.formats.FormatBase.to_file()`
 
-        Italic, underline and strikeout styling is supported.
+        Bold, italic, underline and strikeout styling is supported.
 
         Keyword args:
             apply_styles: If False, do not write any styling.
@@ -124,6 +131,8 @@ class TmpFormat(FormatBase):
                 if apply_styles:
                     if sty.italic:
                         fragment = f"<i>{fragment}</i>"
+                    if sty.bold:
+                        fragment = f"<b>{fragment}</b>"
                     if sty.underline:
                         fragment = f"<u>{fragment}</u>"
                     if sty.strikeout:

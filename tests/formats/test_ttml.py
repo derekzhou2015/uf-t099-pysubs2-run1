@@ -86,6 +86,20 @@ def test_serialize():
     assert subs.to_string("ttml").strip() == TEST_SERIALIZE_REFERENCE.strip()
 
 
+def test_inline_styling_roundtrip_no_duplicate_spaces() -> None:
+    # Regression: whitespace at the edges of styled spans plus XML indentation
+    # inserted by ET.indent collapsed into duplicated spaces on re-parse.
+    ref = SSAFile()
+    ref.append(SSAEvent(start=3000, end=4000,
+                        text=r"nested {\i1}a {\b1}b{\b0} c{\i0} end"))
+
+    ttml_text = ref.to_string("ttml")
+    subs = SSAFile.from_string(ttml_text, "ttml")
+
+    assert subs[0].plaintext == "nested a b c end"
+    assert "  " not in subs[0].plaintext
+
+
 def test_underflow_timestamp_write():
     ref = SSAFile()
     ref.append(SSAEvent(start=make_time(h=-1000), end=make_time(h=-999), text="test"))

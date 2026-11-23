@@ -216,6 +216,22 @@ class TTMLFormat(FormatBase):
         etree_append_child_nodes(elem, nodes)
 
 
+def _text_node_to_caption(node: str) -> str:
+    """
+    Convert a TTML text node into caption text.
+
+    A whitespace-only node separates inline elements (it may be genuine
+    inter-word spacing, or merely XML indentation); this is emitted as a
+    single space. A node with content keeps its interior spacing with any
+    whitespace runs collapsed to one space (edge spaces are preserved here;
+    duplicate spaces arising across element boundaries are normalized by the
+    caller afterwards).
+    """
+    if not node.strip():
+        return " "
+    return re.sub(r"\s+", " ", node)
+
+
 class _TTMLParser:
     def __init__(self, subs: "SSAFile", ignore_par_time_offset: bool = False) -> None:
         self.subs = subs
@@ -257,7 +273,7 @@ class _TTMLParser:
 
         for node in etree_iter_child_nodes(p_elem):
             if isinstance(node, str):
-                event.text += re.sub(r"\s+", " ", node)
+                event.text += _text_node_to_caption(node)
             else:
                 if node.tag == f"{TT_NS}br":
                     event.text += "\\N"
@@ -265,12 +281,16 @@ class _TTMLParser:
                     self.parse_span(event, node)
 
         event.text = event.text.strip()
+        # Spacing at an element boundary may appear both inside a span and in
+        # the separating whitespace node; collapse any resulting runs so word
+        # boundaries are represented exactly once on round-trip.
+        event.text = re.sub(r" +", " ", event.text)
         event.text = re.sub(r"\s*\\N\s*", r"\\N", event.text)
 
     def parse_span(self, event: SSAEvent, span_elem: ET.Element) -> None:
         for node in etree_iter_child_nodes(span_elem):
             if isinstance(node, str):
-                event.text += re.sub(r"\s+", " ", node)
+                event.text += _text_node_to_caption(node)
             else:
                 if node.tag == f"{TT_NS}br":
                     event.text += "\\N"

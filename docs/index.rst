@@ -46,6 +46,7 @@ Documentation
    :maxdepth: 2
 
    supported-formats
+   roundtrip-criteria
    tutorial
    api-reference
    cli

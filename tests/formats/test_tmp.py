@@ -95,8 +95,12 @@ def test_styled_read() -> None:
     """)
 
     subs = SSAFile.from_string(text)
-    assert subs[0].text == r"ten--chars--{\u1}underline"
-    assert subs[1].text == "ten--chars--some--tags"
+    # Supported inline tags (<u>, <b>, and likewise <i>/<s>) are converted to
+    # SubStation tags, including their closing tags, so styling survives a
+    # write/read round-trip. The unknown <xxx> tag is still stripped.
+    # Previously this asserted the tags were dropped (regression fix).
+    assert subs[0].text == r"ten--chars--{\u1}underline{\u0}"
+    assert subs[1].text == r"ten--chars--{\b1}some--tags{\b0}"
 
 
 def test_write_drawing() -> None:
@@ -128,6 +132,20 @@ def test_write_drawing() -> None:
 
     text = subs.to_string("tmp")
     assert text.strip() == ref.strip()
+
+
+def test_styling_survives_roundtrip() -> None:
+    # Regression: the TMP writer emitted <i>/<b>/<u>/<s> but the reader only
+    # recognized <u> (and later <b>); italic, bold and strikeout were lost.
+    ref = SSAFile()
+    ref.append(SSAEvent(start=0, end=9000,
+                        text=r"{\i1}i{\i0} {\b1}b{\b0} {\u1}u{\u0} {\s1}s{\s0}"))
+
+    text = ref.to_string("tmp")
+    subs = SSAFile.from_string(text, format_="tmp")
+
+    # All four styles parse back; TMP has no end timestamps so compare text only.
+    assert subs[0].text == r"{\i1}i{\i0} {\b1}b{\b0} {\u1}u{\u0} {\s1}s{\s0}"
 
 
 def test_overflow_timestamp_write() -> None:

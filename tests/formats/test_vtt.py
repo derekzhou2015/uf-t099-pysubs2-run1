@@ -105,6 +105,18 @@ def test_simple_read() -> None:
     assert subs.equals(ref)
 
 
+def test_bold_survives_roundtrip() -> None:
+    # Regression: VTT shares the SRT writer, which previously dropped bold.
+    ref = SSAFile()
+    ref.append(SSAEvent(start=0, end=make_time(s=1), text=r"{\b1}bold{\b0} plain"))
+
+    text = ref.to_string("vtt")
+    assert "<b>bold</b>" in text
+
+    subs = SSAFile.from_string(text)
+    assert subs[0].text == r"{\b1}bold{\b0} plain"
+
+
 def test_read_complex() -> None:
     # regression test for #30
     text = dedent("""\
